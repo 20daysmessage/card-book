@@ -133,6 +133,9 @@ h1 .t{background:linear-gradient(transparent 60%,var(--yolk) 60%);padding:0 3px;
 .dl .k{width:64px;flex:none;font-size:12px;color:var(--muted)}
 .dl .v{flex:1;min-width:0;word-break:break-word;white-space:pre-wrap}
 .dl .v a{color:var(--accent)}
+.mailbtns{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 2px}
+.dl .v a.mb{font-size:12px;padding:3px 10px;border:2px solid var(--line);border-radius:999px;color:var(--press);text-decoration:none;background:var(--bg)}
+.dl .v a.act{color:var(--press);text-decoration:none;font-weight:500;display:inline-block;padding:2px 0}
 .dl .cp{flex:none;border:2px solid var(--line);background:transparent;border-radius:999px;padding:2px 8px;font-size:12px;color:var(--muted)}
 .dname{font-size:22px;font-weight:700;margin:6px 0 0}
 .dsub{color:var(--muted)}
@@ -839,18 +842,29 @@ function renderDetail(id){
     h+=`<div class="dl">`+rows.map(([k,l])=>{
       let v=esc(c[k]);
       if(k==="website"){ const u=/^https?:\/\//i.test(c[k])?c[k]:"https://"+c[k]; v=`<a href="${esc(u)}" target="_blank" rel="noopener">${esc(c[k])}</a>`; }
+      if(k==="mobile"||k==="phone"){ v=String(c[k]).split(/\s*\/\s*/).map(n=>{ const t=telHref(n); return t?`<a class="act" href="${esc(t)}">📞 ${esc(n)}</a>`:esc(n); }).join("<br>"); }
+      if(k==="email"){ v=String(c[k]).split(/\s*[\/,;]\s*/).map(m=>{ m=m.trim(); if(!/@/.test(m)) return esc(m); const e=encodeURIComponent(m);
+        return `<div>${esc(m)}</div><div class="mailbtns"><a class="mb" data-mail="${esc(m)}" href="mailto:${esc(m)}">✉️ 寄信</a><a class="mb" data-mail="${esc(m)}" href="https://mail.google.com/mail/?view=cm&fs=1&to=${e}" target="_blank" rel="noopener">Gmail</a><a class="mb" data-mail="${esc(m)}" href="https://outlook.office.com/mail/deeplink/compose?to=${e}" target="_blank" rel="noopener">Outlook</a></div>`; }).join(""); }
       return `<div class="it"><div class="k">${l}</div><div class="v">${v}</div>${!["metDate","event"].includes(k)?`<button class="cp" data-copy="${esc(c[k])}">複製</button>`:""}</div>`;
     }).join("")+`</div>`;
   }
   h+=`<div class="actions"><button class="btn" id="dFollow">${c.followUp?"取消待聯絡":"⭐ 標記待聯絡"}</button><button class="btn" id="dCopyAll">複製聯絡資料</button></div>`;
   $("#dBody").innerHTML=h;
   $("#dBody").querySelectorAll("[data-copy]").forEach(b=>b.onclick=()=>copy(b.dataset.copy));
+  $("#dBody").querySelectorAll("[data-mail]").forEach(a=>a.addEventListener("click",()=>{
+    try{ navigator.clipboard.writeText(a.dataset.mail).then(()=>toast("Email 已複製，收件人沒自動帶入的話，長按貼上即可"),()=>{}); }catch(e){}
+  }));
   $("#dBody").querySelectorAll("img[data-side]").forEach(async im=>{
     im.onclick=()=>openViewer(im.src);
     const u=await getHi(c,im.dataset.side); if(u && viewing===id) im.src=u;
   });
   $("#dFollow").onclick=async()=>{ try{ await store.save({...c,followUp:!c.followUp,updatedAt:Date.now()}); renderDetail(id); }catch(e){ toast("更新失敗"); } };
   $("#dCopyAll").onclick=()=>copy([c.name,c.nameEn,[c.title,c.department].filter(Boolean).join(" "),c.company,c.mobile&&"手機 "+c.mobile,c.phone&&"電話 "+c.phone,c.email,c.website,c.address].filter(Boolean).join("\n"));
+}
+function telHref(n){
+  const m=String(n).match(/^(.*?)(?:\s*(?:#|ext\.?|分機|轉|x)\s*(\d+))?$/i);
+  let main=(m?m[1]:n).replace(/[^\d+]/g,""); if(main.replace(/\D/g,"").length<6) return "";
+  return "tel:"+main+(m&&m[2]?","+m[2]:"");
 }
 function openViewer(src){
   const v=$("#viewer"), im=$("#viewerImg"); im.src=src; v.classList.remove("zoom"); v.classList.add("open");
