@@ -196,7 +196,7 @@ h1 .t{background:linear-gradient(transparent 60%,var(--yolk) 60%);padding:0 3px;
     <button class="icon-btn" id="menuBtn">⚙︎ 設定</button>
     <div class="txt">
       <div class="en">my card book ♡</div>
-      <h1><span class="t">我的名片庫</span></h1>
+      <h1><span class="t" id="bookTitle" title="點一下改名稱">我的名片庫</span></h1>
       <div class="count" id="count">載入中…</div>
     </div>
   </section>
@@ -299,6 +299,10 @@ h1 .t{background:linear-gradient(transparent 60%,var(--yolk) 60%);padding:0 3px;
 <div class="overlay" id="settings">
   <div class="sheet">
     <div class="sheet-h"><h2>設定</h2><button class="btn" data-close>關閉</button></div>
+    <div class="f" style="margin-bottom:12px">
+      <label>✏️ 名片庫名稱</label>
+      <div style="display:flex;gap:8px"><input id="titleInput" maxlength="20" placeholder="我的名片庫"><button class="btn primary" id="titleSave" type="button" style="flex:none">儲存</button></div>
+    </div>
     <div class="menu">
       <button id="sHero"><b>🖼 更換首頁照片</b><span>可一次選多張，首頁每幾秒自動換一張</span></button>
       <div id="heroThumbs" class="herothumbs"></div>
@@ -936,7 +940,7 @@ async function doBackup(){
   const cs=await idbs.all("cards"), images={};
   for(const c of cs) for(const side of ["front","back"]){ const b=await store.getImg(c.id,side); if(b) images[imgKey(c.id,side)]=await blobToDataUrl(b); }
   const hero=[]; for(const h of await idbs.all("hero")) hero.push({id:h.id,t:h.t,data:await blobToDataUrl(h.blob)});
-  const json=JSON.stringify({app:"my-card-book",version:1,exportedAt:new Date().toISOString(),cards:cs,images,hero});
+  const json=JSON.stringify({app:"my-card-book",version:1,exportedAt:new Date().toISOString(),title:bookTitle(),cards:cs,images,hero});
   if(await saveFile(`名片庫備份_${today()}.json`,json,"application/json")) toast(`已備份 ${cs.length} 張名片`);
 }
 async function doRestore(file){
@@ -946,6 +950,7 @@ async function doRestore(file){
   for(const c of d.cards){ if(!c||!c.id) continue; await idbs.put("cards",c); cards.set(c.id,c); }
   for(const [k,v] of Object.entries(d.images||{})){ try{ await idbs.put("images",dataUrlToBlob(v),k); const i=k.lastIndexOf("_"); hiDrop(k.slice(0,i),k.slice(i+1)); }catch(e){} }
   for(const h of d.hero||[]){ try{ await idbs.put("hero",{id:h.id,t:h.t,blob:dataUrlToBlob(h.data)}); }catch(e){} }
+  if(d.title){ try{ localStorage.setItem(TITLE_KEY,d.title); }catch(e){} applyTitle(); }
   render(); loadHero(); askPersist(); toast("還原完成 ✨");
 }
 
@@ -982,7 +987,19 @@ $("#heroFiles").onchange=async e=>{
   await loadHero(); askPersist(); toast(n?`已加入 ${n} 張首頁照片 ✨`:"照片讀取失敗");
 };
 $("#sHeroReset").onclick=async()=>{ if(!await confirmBox("移除所有自己加的首頁照片，恢復預設照片？","恢復")) return; for(const h of heroList) await idbs.del("hero",h.id); loadHero(); };
-$("#menuBtn").onclick=()=>open("#settings");
+$("#menuBtn").onclick=()=>{ $("#titleInput").value=bookTitle(); open("#settings"); };
+const TITLE_KEY="my-card-book.title";
+function bookTitle(){ try{ return localStorage.getItem(TITLE_KEY)||"我的名片庫"; }catch(e){ return "我的名片庫"; } }
+function applyTitle(){ const t=bookTitle(); $("#bookTitle").textContent=t; document.title=t; }
+$("#titleSave").onclick=()=>{
+  const t=$("#titleInput").value.trim().slice(0,20);
+  try{ if(t && t!=="我的名片庫") localStorage.setItem(TITLE_KEY,t); else localStorage.removeItem(TITLE_KEY); }catch(e){ toast("無法儲存名稱"); return; }
+  applyTitle(); toast("名稱改好囉 ✨");
+};
+$("#titleInput").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); $("#titleSave").click(); } });
+$("#bookTitle").style.cursor="pointer";
+$("#bookTitle").onclick=()=>{ $("#titleInput").value=bookTitle(); open("#settings"); setTimeout(()=>{ const i=$("#titleInput"); i.focus(); i.select(); },150); };
+applyTitle();
 $("#sCsv").onclick=exportCsv;
 $("#sBackup").onclick=doBackup;
 $("#sRestore").onclick=()=>{ $("#restoreFile").value=""; $("#restoreFile").click(); };
