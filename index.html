@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="color-scheme" content="light">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#f7f1e8">
+<meta name="theme-color" content="#1d3a6b">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="名片庫">
@@ -14,7 +14,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='4' y='12' width='56' height='40' rx='9' fill='%23e0a06c'/%3E%3Ccircle cx='21' cy='29' r='6' fill='%23fffdf9'/%3E%3Cpath d='M12 44c2-6 16-6 18 0' fill='%23fffdf9'/%3E%3Crect x='35' y='25' width='17' height='4' rx='2' fill='%23fffdf9'/%3E%3Crect x='35' y='33' width='12' height='4' rx='2' fill='%23fffdf9'/%3E%3C/svg%3E">
 <title>我的名片庫</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Huninn&family=Gaegu:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Noto+Serif+TC:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 :root{color-scheme:light;
   --bg:#f7f1e8; --surface:#fffdf9; --ink:#5a4636; --muted:#a8957f; --line:#ecdfcd;
@@ -190,6 +190,141 @@ h1 .t{background:linear-gradient(transparent 60%,var(--yolk) 60%);padding:0 3px;
 .viewer.open.zoom{display:block}
 #viewerClose{position:fixed;top:12px;right:12px;z-index:2;background:rgba(255,255,255,.9);color:#000}
 .vhint{position:fixed;bottom:14px;left:0;right:0;text-align:center;color:#fff9;font-size:12px;z-index:2;pointer-events:none}
+
+/* ===== business theme ===== */
+:root{
+  --bg:#eef1f5; --surface:#ffffff; --ink:#1c2836; --muted:#6b7789; --line:#dde3ea;
+  --accent:#1f3a5f; --accent-ink:#fff; --accent-soft:#e6ecf4; --press:#152a45;
+  --gold:#b8913f; --gold-soft:#f5ecd8;
+  --yolk:#f5ecd8; --mint:#e3eef0; --sky:#e6ecf4; --lav:#ecebf3;
+  --radius:16px; --shadow:0 1px 2px rgba(20,35,60,.06),0 6px 18px rgba(20,35,60,.07);
+  --round:"Noto Sans TC",system-ui,-apple-system,sans-serif;
+  --en:"Montserrat","Noto Sans TC",sans-serif;
+}
+body{background-image:none;background:linear-gradient(180deg,#1f3a5f 0,#1f3a5f 210px,var(--bg) 210px)}
+.wrap{padding-top:18px}
+.hero{border:none;border-radius:20px;box-shadow:0 10px 30px rgba(15,30,55,.25)}
+.hero .txt{background:var(--surface);padding:16px 20px 18px;border-top:3px solid var(--gold)}
+.hero .en{font-family:var(--en);font-size:11px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--gold)}
+.hero h1{font-size:26px;margin-top:4px;letter-spacing:.04em}
+h1 .t{background:none;padding:0}
+.hero .count{color:var(--muted)}
+.hero .bubble{background:rgba(28,40,54,.78);color:#fff;border-radius:10px;font-size:12px;box-shadow:none;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.hero .bubble b{font-family:var(--round);color:#f0d9a0;font-size:12px}
+.hero .icon-btn{background:rgba(255,255,255,.92);border:1px solid rgba(0,0,0,.06);color:#1c2836;border-radius:10px;font-weight:500}
+.stats{gap:10px}
+.stat{border:1px solid var(--line);border-radius:14px;padding:12px 14px;border-left:4px solid var(--accent)}
+.stat:nth-child(2){border-left-color:var(--gold)}
+.stat:nth-child(3){border-left-color:#3d7a6e}
+.stat .n{font-family:var(--en);font-size:24px;color:var(--accent)}
+.stat .l i{font-family:var(--en);font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);display:block;margin:0 0 1px}
+.stat.on{border-color:var(--accent);background:var(--accent-soft)}
+.search input{border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow)}
+.chip{border:1px solid var(--line);border-radius:8px;font-weight:500}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:none}
+.row2 select{border:1px solid var(--line);border-radius:10px}
+.sec{font-family:var(--en);font-size:12px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:6px;margin:10px 2px 10px}
+.card{border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:12px}
+.card:active{transform:scale(.99)}
+.thumb{border-radius:8px}
+.list .card .thumb{background:var(--accent-soft)!important;color:var(--accent)}
+.card .nm .co{color:var(--accent);font-weight:500}
+.tag{border-radius:6px;background:var(--accent-soft)!important;color:var(--accent)}
+.tag:nth-child(3n+2){background:var(--gold-soft)!important;color:#7a5e1f}
+.tag:nth-child(3n+3){background:#e3eef0!important;color:#2f5e57}
+.tag.warn{background:#fbe3df!important;color:#9a3324}
+.star{color:var(--gold)}
+.fab .primary{background:var(--accent);box-shadow:0 8px 20px rgba(31,58,95,.35)}
+.fab .secondary{border:1px solid var(--line);box-shadow:var(--shadow)}
+.btn{border:1px solid var(--line);border-radius:10px}
+.btn.primary{background:var(--accent);border-color:var(--accent);box-shadow:none}
+.sheet{border-radius:20px 20px 0 0}
+@media (min-width:700px){.sheet{border-radius:20px}}
+.menu button{border:1px solid var(--line);border-radius:12px;box-shadow:none}
+.f input,.f select,.f textarea{border:1px solid var(--line);border-radius:10px}
+.imgslot{border:2px dashed #c3ccd8;border-radius:12px}
+.dl{border:1px solid var(--line);border-radius:14px}
+.dl .it{border-bottom:1px solid var(--line)}
+.dl .cp{border:1px solid var(--line);border-radius:8px}
+.dl .v a.mb{border:1px solid var(--line);border-radius:8px;background:var(--accent-soft);color:var(--accent)}
+.dl .v a.act{color:var(--accent)}
+.detail-img{border:1px solid var(--line);border-radius:12px}
+.catrow input{border:1px solid var(--line);border-radius:10px}
+.catrow button{border:1px solid var(--line)}
+.linkbtn{color:var(--accent)}
+.progress{border:1px solid var(--line);border-radius:12px}
+.empty{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:34px 20px;box-shadow:var(--shadow)}
+.empty .big{animation:none;font-size:0;width:64px;height:44px;margin:0 auto 12px;border-radius:8px;background:var(--accent);position:relative;box-shadow:6px 6px 0 var(--gold-soft)}
+.empty .big::before{content:"";position:absolute;left:10px;top:11px;width:14px;height:14px;border-radius:50%;background:#fff}
+.empty .big::after{content:"";position:absolute;left:30px;top:13px;width:24px;height:4px;border-radius:2px;background:#fff;box-shadow:0 8px 0 rgba(255,255,255,.7),0 16px 0 rgba(255,255,255,.5)}
+.empty .t1{font-size:16px;font-weight:700;color:var(--ink)}
+.toast{background:#1c2836;color:#fff}
+.bgup{border:1px solid var(--line)}
+
+/* ===== elite theme ===== */
+:root{
+  --bg:#f8f2ea; --surface:#ffffff; --ink:#1f2633; --muted:#8f7f72; --line:#eadfd2;
+  --accent:#1d3a6b; --accent-ink:#fff; --accent-soft:#eaeff7; --press:#142a50;
+  --gold:#b8934f; --gold-soft:#f3ecdd;
+  --shadow:0 1px 2px rgba(0,0,0,.04),0 10px 28px rgba(0,0,0,.06);
+  --serif:"Noto Serif TC",serif;
+  --en:"Cormorant Garamond","Noto Serif TC",serif;
+}
+body{background:linear-gradient(180deg,#1d3a6b 0,#24467d 230px,var(--bg) 230px)}
+.hero{border-radius:6px;box-shadow:0 18px 40px rgba(20,40,80,.28)}
+.hero .txt{border-top:1px solid var(--gold);padding:18px 22px 20px}
+.hero .en{font-family:var(--en);font-size:15px;font-weight:600;letter-spacing:.28em;color:var(--gold);text-transform:uppercase}
+.hero h1{font-family:var(--serif);font-weight:700;font-size:27px;letter-spacing:.12em;margin-top:6px}
+.hero .count{font-family:var(--serif);font-size:12px;letter-spacing:.08em;margin-top:6px}
+.hero .bubble{background:rgba(29,58,107,.86);color:#efe6d2;border-radius:4px;border:1px solid rgba(176,144,79,.6);font-family:var(--serif);letter-spacing:.04em}
+.hero .bubble b{color:var(--gold)}
+.hero .icon-btn{border-radius:4px;background:rgba(29,58,107,.86);color:#efe6d2;border:1px solid rgba(176,144,79,.6);font-family:var(--serif)}
+.stat{border:1px solid var(--line);border-left:1px solid var(--line);border-top:2px solid var(--gold);border-radius:4px;text-align:center}
+.stat:nth-child(2),.stat:nth-child(3){border-left-color:var(--line)}
+.stat .n{font-family:var(--en);font-size:32px;font-weight:600;color:var(--ink);line-height:1}
+.stat .l{font-family:var(--serif)}
+.stat .l i{font-family:var(--en);font-size:12px;letter-spacing:.2em;color:var(--gold);margin-bottom:2px;white-space:nowrap}
+.stat.on{background:var(--accent);border-color:var(--accent)}
+.stat.on .n,.stat.on .l{color:#efe6d2}
+.search input{border-radius:4px}
+.chip{border-radius:2px;font-family:var(--serif);letter-spacing:.06em}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#efe6d2}
+.row2 select{border-radius:4px;font-family:var(--serif)}
+.sec{font-family:var(--en);font-size:15px;letter-spacing:.3em;color:var(--accent);border-bottom:1px solid var(--gold)}
+.sec span{font-family:var(--serif);letter-spacing:.05em;color:var(--muted)}
+.card{border-radius:4px;border:1px solid var(--line)}
+.list .card .thumb{background:var(--accent)!important;color:var(--gold);font-family:var(--serif)}
+.thumb{border-radius:2px}
+.card .nm{font-family:var(--serif);letter-spacing:.04em}
+.card .nm .co{color:var(--gold);font-family:var(--serif)}
+.tag{border-radius:2px;background:#e6edf7!important;color:#1d3a6b!important;font-family:var(--serif)}
+.tag:nth-child(3n+2){background:var(--gold-soft)!important;color:#6e5524!important}
+.tag:nth-child(3n+3){background:#efe7df!important;color:#5e4a3c!important}
+.star{color:var(--gold)}
+.fab .primary{background:var(--accent);color:#efe6d2;border:1px solid var(--gold);border-radius:4px;box-shadow:0 10px 24px rgba(20,40,80,.28);font-family:var(--serif);letter-spacing:.08em}
+.fab .secondary{border-radius:4px;font-family:var(--serif);letter-spacing:.08em}
+.btn{border-radius:4px;font-family:var(--serif)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#efe6d2}
+.sheet{border-radius:10px 10px 0 0}
+@media (min-width:700px){.sheet{border-radius:10px}}
+.sheet-h h2{font-family:var(--serif);letter-spacing:.1em}
+.menu button{border-radius:4px}
+.menu b{font-family:var(--serif)}
+.f input,.f select,.f textarea{border-radius:4px}
+.imgslot{border-radius:4px;border-color:#d2cbbb}
+.dl{border-radius:4px}
+.dname{font-family:var(--serif);letter-spacing:.06em}
+.dl .cp,.dl .v a.mb{border-radius:3px}
+.dl .v a.mb{background:var(--accent);color:#efe6d2;border-color:var(--accent)}
+.dl .v a.act{color:var(--accent);border-bottom:1px solid var(--gold)}
+.detail-img{border-radius:4px}
+.catrow input{border-radius:4px}
+.linkbtn{color:var(--gold)}
+.empty{border-radius:4px;border-top:2px solid var(--gold)}
+.empty .big{background:var(--accent);border-radius:3px;box-shadow:6px 6px 0 var(--gold-soft)}
+.empty .big::after{background:var(--gold);box-shadow:0 8px 0 rgba(255,255,255,.7),0 16px 0 rgba(255,255,255,.5)}
+.empty .t1{font-family:var(--serif);letter-spacing:.08em}
+.toast{background:#1d3a6b;color:#efe6d2;border:1px solid var(--gold);border-radius:4px}
 </style>
 </head>
 <body>
@@ -197,19 +332,19 @@ h1 .t{background:linear-gradient(transparent 60%,var(--yolk) 60%);padding:0 3px;
   <section class="hero">
     <div class="pics"><img id="heroA" class="on" src="home.jpg" alt="首頁照片"><img id="heroB" alt=""></div>
     <span class="sticker s1">✿</span><span class="sticker s2">♡</span>
-    <div class="bubble" id="bubble">今天又認識誰了喵？</div>
+    <div class="bubble" id="bubble">今天又認識了誰？</div>
     <div class="fade"></div>
-    <button class="icon-btn" id="menuBtn">⚙︎ 設定</button>
+    <button class="icon-btn" id="menuBtn">設定</button>
     <div class="txt">
-      <div class="en">my card book ♡</div>
+      <div class="en">The Card Collection</div>
       <h1><span class="t" id="bookTitle" title="點一下改名稱">我的名片庫</span></h1>
       <div class="count" id="count">載入中…</div>
     </div>
   </section>
   <div class="stats">
-    <button class="stat" data-k="all"><div class="n" id="stTotal">0</div><div class="l"><i>all</i>全部名片</div></button>
-    <button class="stat" data-k="month"><div class="n" id="stMonth">0</div><div class="l"><i>new</i>本月新增</div></button>
-    <button class="stat" data-k="follow"><div class="n" id="stFollow">0</div><div class="l"><i>todo</i>待聯絡</div></button>
+    <button class="stat" data-k="all"><div class="n" id="stTotal">0</div><div class="l"><i>Total</i>全部名片</div></button>
+    <button class="stat" data-k="month"><div class="n" id="stMonth">0</div><div class="l"><i>New</i>本月新增</div></button>
+    <button class="stat" data-k="follow"><div class="n" id="stFollow">0</div><div class="l"><i>To Do</i>待聯絡</div></button>
   </div>
   <div id="modeNotice" class="notice hidden"></div>
   <div class="search">
@@ -218,8 +353,8 @@ h1 .t{background:linear-gradient(transparent 60%,var(--yolk) 60%);padding:0 3px;
   </div>
   <div class="filters" id="chips"></div>
   <div class="row2">
-    <select id="catFilter"><option value="">🏷 全部分類</option></select>
-    <select id="eventFilter"><option value="">📍 全部場合</option></select>
+    <select id="catFilter"><option value="">全部分類</option></select>
+    <select id="eventFilter"><option value="">全部場合</option></select>
     <select id="sort" class="narrow">
       <option value="new">最新</option>
       <option value="name">姓名</option>
@@ -227,15 +362,15 @@ h1 .t{background:linear-gradient(transparent 60%,var(--yolk) 60%);padding:0 3px;
       <option value="met">日期</option>
     </select>
   </div>
-  <div class="sec">my cards<span id="secCount"></span></div>
+  <div class="sec">Contacts<span id="secCount"></span></div>
   <div class="list" id="list"></div>
 </div>
 
 <div class="progress" id="progress"><div class="spin"></div><span id="progText"></span><div class="bar"><i id="progBar"></i></div></div>
 
 <div class="fab">
-  <button class="secondary" id="manualBtn">✏️ 手動</button>
-  <button class="primary" id="addBtn">📸 拍名片</button>
+  <button class="secondary" id="manualBtn">手動輸入</button>
+  <button class="primary" id="addBtn">＋ 拍攝名片</button>
 </div>
 
 <input type="file" id="fileOne" accept="image/*" class="hidden">
@@ -306,22 +441,22 @@ h1 .t{background:linear-gradient(transparent 60%,var(--yolk) 60%);padding:0 3px;
   <div class="sheet">
     <div class="sheet-h"><h2>設定</h2><button class="btn" data-close>關閉</button></div>
     <div class="f" style="margin-bottom:12px">
-      <label>✏️ 名片庫名稱</label>
+      <label>名片庫名稱</label>
       <div style="display:flex;gap:8px"><input id="titleInput" maxlength="20" placeholder="我的名片庫"><button class="btn primary" id="titleSave" type="button" style="flex:none">儲存</button></div>
     </div>
     <div class="f" style="margin-bottom:14px">
-      <label>🏷 分類（直接點文字可以改名）</label>
+      <label>分類（直接點文字可以改名）</label>
       <div id="catList" class="catlist"></div>
       <div style="display:flex;gap:8px;margin-top:8px"><input id="catNew" maxlength="12" placeholder="新增分類，例如：學校"><button class="btn primary" id="catAdd" type="button" style="flex:none">新增</button></div>
       <button class="linkbtn" id="catReset" type="button">恢復預設分類</button>
     </div>
     <div class="menu">
-      <button id="sHero"><b>🖼 更換首頁照片</b><span>可一次選多張，首頁每幾秒自動換一張</span></button>
+      <button id="sHero"><b>更換首頁照片</b><span>可一次選多張，首頁每幾秒自動換一張</span></button>
       <div id="heroThumbs" class="herothumbs"></div>
-      <button id="sHeroReset" class="hidden"><b>🏠 恢復預設照片</b><span>移除自己加的首頁照片</span></button>
-      <button id="sCsv"><b>📄 匯出 CSV</b><span>可用 Excel 開啟，中文不會亂碼</span></button>
-      <button id="sBackup"><b>💾 備份全部資料</b><span>名片和照片存成一個檔案，換手機時可以還原</span></button>
-      <button id="sRestore"><b>📥 從備份還原</b><span>選擇之前備份的檔案</span></button>
+      <button id="sHeroReset" class="hidden"><b>恢復預設照片</b><span>移除自己加的首頁照片</span></button>
+      <button id="sCsv"><b>匯出 CSV</b><span>可用 Excel 開啟，中文不會亂碼</span></button>
+      <button id="sBackup"><b>備份全部資料</b><span>名片和照片存成一個檔案，換手機時可以還原</span></button>
+      <button id="sRestore"><b>從備份還原</b><span>選擇之前備份的檔案</span></button>
     </div>
     <p class="tiny">🔒 名片只存在這支手機的瀏覽器裡，不會上傳到任何地方。清除瀏覽器資料或換手機時會不見，建議定期「備份全部資料」。</p>
   </div>
@@ -460,11 +595,10 @@ function render(){
   $("#stFollow").textContent=all.filter(c=>c.followUp).length;
   document.querySelectorAll(".stat").forEach(b=>b.classList.toggle("on",(b.dataset.k==="follow"&&filt.chip==="follow")||(b.dataset.k==="month"&&filt.chip==="month")));
   const nf=all.filter(c=>c.followUp).length;
-  const meow=heroIsCat?"喵":"";
-  $("#bubble").innerHTML= !all.length? `<b>hi!</b> 拍第一張名片給我看${meow}～` : nf? `還有 <b>${nf}</b> 位在等你聯絡${meow} ♡` : `今天又認識誰了${meow||"呢"}？`;
+  $("#bubble").innerHTML= !all.length? `開始建立你的人脈資料庫` : nf? `有 <b>${nf}</b> 位聯絡人待跟進` : `共 <b>${all.length}</b> 位聯絡人`;
   // chips
   const nFollow=all.filter(c=>c.followUp).length, nReview=all.filter(c=>c.needsReview).length;
-  const chips=[["all","全部"],["follow",`⭐ 待聯絡${nFollow?" "+nFollow:""}`],...(nReview?[["review",`待確認 ${nReview}`]]:[])];
+  const chips=[["all","全部"],["follow",`★ 待聯絡${nFollow?" "+nFollow:""}`],...(nReview?[["review",`待確認 ${nReview}`]]:[])];
   if(filt.chip!=="month" && !chips.some(c=>c[0]===filt.chip)) filt.chip="all";
   $("#chips").innerHTML=chips.map(([k,l])=>`<button class="chip${filt.chip===k?" on":""}" data-k="${esc(k)}">${esc(l)}</button>`).join("");
   // events
@@ -473,18 +607,18 @@ function render(){
   const cnt=k=>all.filter(x=>x.category===k).length;
   const catAll=[...CATEGORIES,...[...new Set(all.map(x=>x.category).filter(Boolean))].filter(x=>!CATEGORIES.includes(x))];
   if(filt.cat && !catAll.includes(filt.cat)) filt.cat="";
-  $("#catFilter").innerHTML=`<option value="">🏷 全部分類</option>`+catAll.map(k=>`<option value="${esc(k)}"${k===filt.cat?" selected":""}>${esc(k)}（${cnt(k)}）</option>`).join("");
-  $("#eventFilter").innerHTML=`<option value="">📍 全部場合</option>`+evs.map(e=>`<option${e===filt.event?" selected":""}>${esc(e)}</option>`).join("");
+  $("#catFilter").innerHTML=`<option value="">全部分類</option>`+catAll.map(k=>`<option value="${esc(k)}"${k===filt.cat?" selected":""}>${esc(k)}（${cnt(k)}）</option>`).join("");
+  $("#eventFilter").innerHTML=`<option value="">全部場合</option>`+evs.map(e=>`<option${e===filt.event?" selected":""}>${esc(e)}</option>`).join("");
   $("#eventList").innerHTML=evs.map(e=>`<option value="${esc(e)}">`).join("");
   $("#companyList").innerHTML=[...new Set(all.map(c=>c.company).filter(Boolean))].map(e=>`<option value="${esc(e)}">`).join("");
   // list
   const arr=filtered();
   $("#secCount").textContent=arr.length?`${arr.length} 張`:"";
   if(!all.length){
-    $("#list").innerHTML=`<div class="empty"><div class="big">🐾</div><div>名片庫還空空的～</div><div style="font-size:13px;margin-top:4px">按右下角「拍名片」，拍照後會自動辨識姓名、公司、電話<br>名片只存在這支手機裡 🔒</div></div>`;
+    $("#list").innerHTML=`<div class="empty"><div class="big"></div><div class="t1">還沒有名片</div><div style="font-size:13px;margin-top:6px;color:var(--muted)">點右下角「拍名片」，系統會自動辨識姓名、公司與電話<br>資料只儲存在這支手機，不會上傳</div></div>`;
     return;
   }
-  if(!arr.length){ $("#list").innerHTML=`<div class="empty"><div class="big">🔍</div><div>找不到符合的名片耶</div></div>`; return; }
+  if(!arr.length){ $("#list").innerHTML=`<div class="empty"><div class="t1">找不到符合的名片</div><div style="font-size:13px;margin-top:6px;color:var(--muted)">試試其他關鍵字或篩選條件</div></div>`; return; }
   $("#list").innerHTML=arr.map(c=>{
     const nm=c.name||c.nameEn||"（未命名）";
     const th=c.imgFront?`<img src="${esc(c.imgFront)}" alt="">`:esc((nm||"?").slice(0,1));
@@ -492,7 +626,7 @@ function render(){
     const sub=c.title||c.department||c.email||c.mobile||"";
     const tags=[c.category,c.event,...(c.tags||[])].filter(Boolean).slice(0,4).map(t=>`<span class="tag">${esc(t)}</span>`).join("");
     return `<button class="card" data-id="${esc(c.id)}"><div class="thumb">${th}</div><div class="meta">
-      <div class="nm"><span class="nn">${esc(nm)}</span>${co?`<span class="co">${esc(co)}</span>`:""}${c.followUp?'<span class="star">⭐</span>':""}</div>
+      <div class="nm"><span class="nn">${esc(nm)}</span>${co?`<span class="co">${esc(co)}</span>`:""}${c.followUp?'<span class="star">★</span>':""}</div>
       <div class="sub">${esc(sub)}</div>
       <div class="tags">${c.needsReview?'<span class="tag warn">待確認</span>':""}${tags}</div></div></button>`;
   }).join("");
@@ -800,7 +934,7 @@ function renderForm(){
   h+=`<div class="f full"><label>認識場合</label><input name="event" list="eventList" value="${esc(c.event||"")}" placeholder="例：2026 東京食品展、全聯採購會議"></div>`;
   h+=`<div class="f full"><label>標籤（用逗號分隔）</label><input name="tags" value="${esc((c.tags||[]).join(", "))}" placeholder="例：日本市場, 樣品已寄"></div>`;
   h+=`<div class="f full"><label>備註</label><textarea name="notes" placeholder="聊了什麼、對方需求、下一步…">${esc(c.notes||"")}</textarea></div>`;
-  h+=`<label class="check full"><input type="checkbox" name="followUp"${c.followUp?" checked":""}> ⭐ 標記為待聯絡</label>`;
+  h+=`<label class="check full"><input type="checkbox" name="followUp"${c.followUp?" checked":""}> ★ 標記為待聯絡</label>`;
   $("#form").innerHTML=h;
 }
 function readForm(){
@@ -832,7 +966,7 @@ $("#edSave").onclick=async()=>{
   $("#edSave").disabled=true; $("#edSave").textContent="儲存中…";
   try{
     for(const side of ["front","back"]) if(editing.dirty[side]) await store.putImg(c.id,side,editing.hiBlob[side]);
-    await store.save(c); close("#editor"); toast("存好囉 ✨"); editing=null;
+    await store.save(c); close("#editor"); toast("已儲存"); editing=null;
   }
   catch(e){ toast(e && e.code==="quota_exceeded"?"儲存空間已滿，請刪除部分名片":`儲存失敗，請再試一次（${(e&&(e.code||e.message))||"未知錯誤"}${e&&e.size?"・"+Math.round(e.size/1024)+"KB":""}）`); }
   finally{ $("#edSave").disabled=false; $("#edSave").textContent="儲存"; }
@@ -852,7 +986,7 @@ function renderDetail(id){
   if(c.imgFront) h+=`<img class="detail-img" data-side="front" src="${esc(c.imgFront)}" alt="名片正面">`;
   if(c.imgBack) h+=`<img class="detail-img" data-side="back" src="${esc(c.imgBack)}" alt="名片背面">`;
   if(c.imgFront||c.imgBack) h+=`<div class="dsub" style="font-size:12px;margin-bottom:4px">點圖片可全螢幕放大</div>`;
-  h+=`<div class="dname">${esc(c.name||c.nameEn||"（未命名）")}${c.followUp?' <span class="star">⭐</span>':""}</div>`;
+  h+=`<div class="dname">${esc(c.name||c.nameEn||"（未命名）")}${c.followUp?' <span class="star">★</span>':""}</div>`;
   if(c.name && c.nameEn) h+=`<div class="dsub">${esc(c.nameEn)}</div>`;
   h+=`<div class="dsub">${esc([c.title,c.department].filter(Boolean).join("・"))}</div>`;
   h+=`<div class="dsub" style="color:var(--ink);font-weight:500">${esc(c.company||"")}</div>`;
@@ -869,7 +1003,7 @@ function renderDetail(id){
       return `<div class="it"><div class="k">${l}</div><div class="v">${v}</div>${!["metDate","event"].includes(k)?`<button class="cp" data-copy="${esc(c[k])}">複製</button>`:""}</div>`;
     }).join("")+`</div>`;
   }
-  h+=`<div class="actions"><button class="btn" id="dFollow">${c.followUp?"取消待聯絡":"⭐ 標記待聯絡"}</button><button class="btn" id="dCopyAll">複製聯絡資料</button></div>`;
+  h+=`<div class="actions"><button class="btn" id="dFollow">${c.followUp?"取消待聯絡":"★ 標記待聯絡"}</button><button class="btn" id="dCopyAll">複製聯絡資料</button></div>`;
   $("#dBody").innerHTML=h;
   $("#dBody").querySelectorAll("[data-copy]").forEach(b=>b.onclick=()=>copy(b.dataset.copy));
   $("#dBody").querySelectorAll("[data-mail]").forEach(a=>a.addEventListener("click",()=>{
@@ -969,7 +1103,7 @@ async function doRestore(file){
   for(const h of d.hero||[]){ try{ await idbs.put("hero",{id:h.id,t:h.t,blob:dataUrlToBlob(h.data)}); }catch(e){} }
   if(Array.isArray(d.categories)&&d.categories.length){ CATEGORIES=d.categories.filter(x=>typeof x==="string"&&x.trim()); try{ localStorage.setItem(CAT_KEY,JSON.stringify(CATEGORIES)); }catch(e){} }
   if(d.title){ try{ localStorage.setItem(TITLE_KEY,d.title); }catch(e){} applyTitle(); }
-  render(); loadHero(); askPersist(); toast("還原完成 ✨");
+  render(); loadHero(); askPersist(); toast("還原完成");
 }
 
 /* ---------- home photos (auto-rotating) ---------- */
@@ -1007,7 +1141,7 @@ $("#heroFiles").onchange=async e=>{
   const files=[...e.target.files]; if(!files.length||!idb) return;
   let n=0;
   for(const f of files){ try{ const img=await loadImg(f); const blob=await toBlob(scaled(img,1400),.85); await idbs.put("hero",{id:uidGen(),t:Date.now()+n,blob}); n++; }catch(err){} }
-  await loadHero(); askPersist(); toast(n?`已加入 ${n} 張首頁照片 ✨`:"照片讀取失敗");
+  await loadHero(); askPersist(); toast(n?`已加入 ${n} 張首頁照片`:"照片讀取失敗");
 };
 $("#sHeroReset").onclick=async()=>{ if(!await confirmBox("移除所有自己加的首頁照片，恢復預設照片？","恢復")) return; for(const h of heroList) await idbs.del("hero",h.id); loadHero(); };
 $("#menuBtn").onclick=()=>{ $("#titleInput").value=bookTitle(); renderCatEditor(); open("#settings"); };
@@ -1045,7 +1179,7 @@ function applyTitle(){ const t=bookTitle(); $("#bookTitle").textContent=t; docum
 $("#titleSave").onclick=()=>{
   const t=$("#titleInput").value.trim().slice(0,20);
   try{ if(t && t!=="我的名片庫") localStorage.setItem(TITLE_KEY,t); else localStorage.removeItem(TITLE_KEY); }catch(e){ toast("無法儲存名稱"); return; }
-  applyTitle(); toast("名稱改好囉 ✨");
+  applyTitle(); toast("名稱已更新");
 };
 $("#titleInput").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); $("#titleSave").click(); } });
 $("#bookTitle").style.cursor="pointer";
