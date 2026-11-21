@@ -151,6 +151,12 @@ h1 .t{background:linear-gradient(transparent 60%,var(--yolk) 60%);padding:0 3px;
 .menu b{display:block}
 .menu span{font-size:13px;color:var(--muted)}
 .hidden{display:none!important}
+.catlist{display:flex;flex-direction:column;gap:6px}
+.catrow{display:flex;gap:6px;align-items:center}
+.catrow input{flex:1;min-width:0;padding:7px 12px;border:2px solid var(--line);border-radius:12px;background:var(--surface)}
+.catrow .n{font-size:12px;color:var(--muted);flex:none;width:44px;text-align:right}
+.catrow button{flex:none;border:2px solid var(--line);background:var(--surface);border-radius:999px;width:30px;height:30px;padding:0;color:var(--muted)}
+.linkbtn{border:none;background:none;color:var(--press);font-size:12px;padding:8px 2px 0;text-decoration:underline}
 .hero .pics{position:relative;height:300px;background:var(--accent-soft)}
 .hero .pics img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 30%;opacity:0;transition:opacity 1.4s ease}
 .hero .pics img.on{opacity:1}
@@ -303,6 +309,12 @@ h1 .t{background:linear-gradient(transparent 60%,var(--yolk) 60%);padding:0 3px;
       <label>✏️ 名片庫名稱</label>
       <div style="display:flex;gap:8px"><input id="titleInput" maxlength="20" placeholder="我的名片庫"><button class="btn primary" id="titleSave" type="button" style="flex:none">儲存</button></div>
     </div>
+    <div class="f" style="margin-bottom:14px">
+      <label>🏷 分類（直接點文字可以改名）</label>
+      <div id="catList" class="catlist"></div>
+      <div style="display:flex;gap:8px;margin-top:8px"><input id="catNew" maxlength="12" placeholder="新增分類，例如：學校"><button class="btn primary" id="catAdd" type="button" style="flex:none">新增</button></div>
+      <button class="linkbtn" id="catReset" type="button">恢復預設分類</button>
+    </div>
     <div class="menu">
       <button id="sHero"><b>🖼 更換首頁照片</b><span>可一次選多張，首頁每幾秒自動換一張</span></button>
       <div id="heroThumbs" class="herothumbs"></div>
@@ -324,7 +336,10 @@ h1 .t{background:linear-gradient(transparent 60%,var(--yolk) 60%);padding:0 3px;
 
 <script>
 (() => {
-const CATEGORIES = ["通路客戶","通路窗口","經銷/進口商","供應商","代工/OEM","食品同業","合作品牌","IP廠商","贈品商","行銷公司","設計/代理商","媒體/KOL","媒體記者","公部門/協會","其他"];
+const CAT_KEY="my-card-book.categories";
+const DEFAULT_CATS=["客戶","廠商／供應商","合作夥伴","同業","媒體","同事","朋友","其他"];
+function loadCats(){ try{ const v=JSON.parse(localStorage.getItem(CAT_KEY)||"null"); if(Array.isArray(v)&&v.length) return v.filter(x=>typeof x==="string"&&x.trim()); }catch(e){} return DEFAULT_CATS.slice(); }
+let CATEGORIES = loadCats();
 const FIELDS = [
   ["name","姓名"],["nameEn","英文姓名"],
   ["title","職稱"],["department","部門"],
@@ -456,7 +471,9 @@ function render(){
   const evs=[...new Set(all.map(c=>c.event).filter(Boolean))].sort();
   if(filt.event && !evs.includes(filt.event)) filt.event="";
   const cnt=k=>all.filter(x=>x.category===k).length;
-  $("#catFilter").innerHTML=`<option value="">🏷 全部分類</option>`+CATEGORIES.map(k=>`<option value="${esc(k)}"${k===filt.cat?" selected":""}>${esc(k)}（${cnt(k)}）</option>`).join("");
+  const catAll=[...CATEGORIES,...[...new Set(all.map(x=>x.category).filter(Boolean))].filter(x=>!CATEGORIES.includes(x))];
+  if(filt.cat && !catAll.includes(filt.cat)) filt.cat="";
+  $("#catFilter").innerHTML=`<option value="">🏷 全部分類</option>`+catAll.map(k=>`<option value="${esc(k)}"${k===filt.cat?" selected":""}>${esc(k)}（${cnt(k)}）</option>`).join("");
   $("#eventFilter").innerHTML=`<option value="">📍 全部場合</option>`+evs.map(e=>`<option${e===filt.event?" selected":""}>${esc(e)}</option>`).join("");
   $("#eventList").innerHTML=evs.map(e=>`<option value="${esc(e)}">`).join("");
   $("#companyList").innerHTML=[...new Set(all.map(c=>c.company).filter(Boolean))].map(e=>`<option value="${esc(e)}">`).join("");
@@ -778,7 +795,7 @@ async function runScan(overwrite=false){
 function renderForm(){
   const c=editing.card;
   let h=FIELDS.map(([k,l,full])=>`<div class="f${full?" full":""}"><label>${l}</label><input name="${k}" value="${esc(c[k]||"")}"${k==="company"?' list="companyList"':""}${k==="email"?' type="email" inputmode="email"':""}${["mobile","phone","fax"].includes(k)?' inputmode="tel"':""}></div>`).join("");
-  h+=`<div class="f"><label>分類</label><select name="category"><option value="">—</option>${CATEGORIES.map(x=>`<option${x===c.category?" selected":""}>${x}</option>`).join("")}</select></div>`;
+  h+=`<div class="f"><label>分類</label><select name="category"><option value="">—</option>${[...CATEGORIES,...(c.category&&!CATEGORIES.includes(c.category)?[c.category]:[])].map(x=>`<option${x===c.category?" selected":""}>${x}</option>`).join("")}</select></div>`;
   h+=`<div class="f"><label>認識日期</label><input name="metDate" type="date" value="${esc(c.metDate||"")}"></div>`;
   h+=`<div class="f full"><label>認識場合</label><input name="event" list="eventList" value="${esc(c.event||"")}" placeholder="例：2026 東京食品展、全聯採購會議"></div>`;
   h+=`<div class="f full"><label>標籤（用逗號分隔）</label><input name="tags" value="${esc((c.tags||[]).join(", "))}" placeholder="例：日本市場, 樣品已寄"></div>`;
@@ -940,7 +957,7 @@ async function doBackup(){
   const cs=await idbs.all("cards"), images={};
   for(const c of cs) for(const side of ["front","back"]){ const b=await store.getImg(c.id,side); if(b) images[imgKey(c.id,side)]=await blobToDataUrl(b); }
   const hero=[]; for(const h of await idbs.all("hero")) hero.push({id:h.id,t:h.t,data:await blobToDataUrl(h.blob)});
-  const json=JSON.stringify({app:"my-card-book",version:1,exportedAt:new Date().toISOString(),title:bookTitle(),cards:cs,images,hero});
+  const json=JSON.stringify({app:"my-card-book",version:1,exportedAt:new Date().toISOString(),title:bookTitle(),categories:CATEGORIES,cards:cs,images,hero});
   if(await saveFile(`名片庫備份_${today()}.json`,json,"application/json")) toast(`已備份 ${cs.length} 張名片`);
 }
 async function doRestore(file){
@@ -950,6 +967,7 @@ async function doRestore(file){
   for(const c of d.cards){ if(!c||!c.id) continue; await idbs.put("cards",c); cards.set(c.id,c); }
   for(const [k,v] of Object.entries(d.images||{})){ try{ await idbs.put("images",dataUrlToBlob(v),k); const i=k.lastIndexOf("_"); hiDrop(k.slice(0,i),k.slice(i+1)); }catch(e){} }
   for(const h of d.hero||[]){ try{ await idbs.put("hero",{id:h.id,t:h.t,blob:dataUrlToBlob(h.data)}); }catch(e){} }
+  if(Array.isArray(d.categories)&&d.categories.length){ CATEGORIES=d.categories.filter(x=>typeof x==="string"&&x.trim()); try{ localStorage.setItem(CAT_KEY,JSON.stringify(CATEGORIES)); }catch(e){} }
   if(d.title){ try{ localStorage.setItem(TITLE_KEY,d.title); }catch(e){} applyTitle(); }
   render(); loadHero(); askPersist(); toast("還原完成 ✨");
 }
@@ -987,7 +1005,35 @@ $("#heroFiles").onchange=async e=>{
   await loadHero(); askPersist(); toast(n?`已加入 ${n} 張首頁照片 ✨`:"照片讀取失敗");
 };
 $("#sHeroReset").onclick=async()=>{ if(!await confirmBox("移除所有自己加的首頁照片，恢復預設照片？","恢復")) return; for(const h of heroList) await idbs.del("hero",h.id); loadHero(); };
-$("#menuBtn").onclick=()=>{ $("#titleInput").value=bookTitle(); open("#settings"); };
+$("#menuBtn").onclick=()=>{ $("#titleInput").value=bookTitle(); renderCatEditor(); open("#settings"); };
+function saveCats(){ try{ localStorage.setItem(CAT_KEY,JSON.stringify(CATEGORIES)); }catch(e){ toast("無法儲存分類"); } render(); renderCatEditor(); }
+function renderCatEditor(){
+  const cnt=k=>[...cards.values()].filter(x=>x.category===k).length;
+  $("#catList").innerHTML=CATEGORIES.map((k,i)=>`<div class="catrow"><input data-ci="${i}" value="${esc(k)}" maxlength="12"><span class="n">${cnt(k)} 張</span><button type="button" data-cdel="${i}" aria-label="刪除">✕</button></div>`).join("");
+}
+async function renameCat(oldN,newN){
+  for(const c of [...cards.values()]) if(c.category===oldN){ const v={...c,category:newN}; try{ await idbs.put("cards",v); cards.set(v.id,v); }catch(e){} }
+}
+$("#catList").addEventListener("change",async e=>{
+  const i=e.target.dataset.ci; if(i==null) return;
+  const oldN=CATEGORIES[i], newN=e.target.value.trim().slice(0,12);
+  if(!newN || newN===oldN){ e.target.value=oldN; return; }
+  if(CATEGORIES.includes(newN)){ toast("已經有這個分類了"); e.target.value=oldN; return; }
+  CATEGORIES[i]=newN; await renameCat(oldN,newN); if(filt.cat===oldN) filt.cat=newN; saveCats(); toast(`已改名為「${newN}」，名片也一起更新`);
+});
+$("#catList").addEventListener("click",async e=>{
+  const b=e.target.closest("[data-cdel]"); if(!b) return;
+  const k=CATEGORIES[b.dataset.cdel]; const n=[...cards.values()].filter(x=>x.category===k).length;
+  if(!await confirmBox(n?`刪除「${k}」分類？已經用這個分類的 ${n} 張名片會保留原本的分類名稱。`:`刪除「${k}」分類？`,"刪除")) return;
+  CATEGORIES.splice(b.dataset.cdel,1); saveCats();
+});
+$("#catAdd").onclick=()=>{
+  const v=$("#catNew").value.trim().slice(0,12); if(!v) return;
+  if(CATEGORIES.includes(v)){ toast("已經有這個分類了"); return; }
+  CATEGORIES.push(v); $("#catNew").value=""; saveCats(); toast(`已新增「${v}」`);
+};
+$("#catNew").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); $("#catAdd").click(); } });
+$("#catReset").onclick=async()=>{ if(!await confirmBox("把分類恢復成預設的清單？名片上已經選好的分類不會被改掉。","恢復")) return; CATEGORIES=DEFAULT_CATS.slice(); saveCats(); };
 const TITLE_KEY="my-card-book.title";
 function bookTitle(){ try{ return localStorage.getItem(TITLE_KEY)||"我的名片庫"; }catch(e){ return "我的名片庫"; } }
 function applyTitle(){ const t=bookTitle(); $("#bookTitle").textContent=t; document.title=t; }
