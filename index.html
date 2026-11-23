@@ -327,6 +327,20 @@ body{background:linear-gradient(180deg,#1d3a6b 0,#24467d 230px,var(--bg) 230px)}
 .toast{background:#1d3a6b;color:#efe6d2;border:1px solid var(--gold);border-radius:4px}
 .vcfsteps{font-size:14px;line-height:1.7;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:6px 14px}
 .vcfsteps p{margin:8px 0}
+
+/* bulk select */
+.selbtn{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:3px 12px;font-size:12px;margin-left:8px;font-family:inherit;letter-spacing:0;text-transform:none}
+body.selecting .fab{display:none}
+.card .ck{flex:none;width:22px;height:22px;border-radius:50%;border:2px solid var(--line);background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff}
+.card .ck.on{background:var(--accent);border-color:var(--accent)}
+.card .ck.on::after{content:"✓"}
+.card.picked{outline:2px solid var(--accent);outline-offset:-2px}
+.selbar{position:fixed;left:12px;right:12px;bottom:16px;max-width:736px;margin:0 auto;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.18);padding:10px 12px;display:none;align-items:center;gap:8px;z-index:8}
+body.selecting .selbar{display:flex}
+.selbar span{flex:1;font-size:14px;text-align:center}
+.selbar button{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:8px 12px;font-size:14px;color:var(--ink);font-family:inherit}
+.selbar #selDel{background:#c0392b;border-color:#c0392b;color:#fff}
+.selbar #selDel:disabled{opacity:.4}
 </style>
 </head>
 <body>
@@ -364,12 +378,18 @@ body{background:linear-gradient(180deg,#1d3a6b 0,#24467d 230px,var(--bg) 230px)}
       <option value="met">日期</option>
     </select>
   </div>
-  <div class="sec">Contacts<span id="secCount"></span></div>
+  <div class="sec">Contacts<span><span id="secCount"></span><button class="selbtn" id="selToggle" type="button">選取</button></span></div>
   <div class="list" id="list"></div>
 </div>
 
 <div class="progress" id="progress"><div class="spin"></div><span id="progText"></span><div class="bar"><i id="progBar"></i></div></div>
 
+<div class="selbar" id="selBar">
+  <button id="selAll" type="button">全選</button>
+  <span id="selInfo">已選 0 張</span>
+  <button id="selDel" type="button" disabled>刪除</button>
+  <button id="selCancel" type="button">完成</button>
+</div>
 <div class="fab">
   <button class="secondary" id="manualBtn">手動輸入</button>
   <button class="primary" id="addBtn">＋ 拍攝名片</button>
@@ -632,6 +652,7 @@ function render(){
   $("#companyList").innerHTML=[...new Set(all.map(c=>c.company).filter(Boolean))].map(e=>`<option value="${esc(e)}">`).join("");
   // list
   const arr=filtered();
+  if(typeof updSel==="function" && selectMode) updSel();
   $("#secCount").textContent=arr.length?`${arr.length} 張`:"";
   if(!all.length){
     $("#list").innerHTML=`<div class="empty"><div class="big"></div><div class="t1">還沒有名片</div><div style="font-size:13px;margin-top:6px;color:var(--muted)">點右下角「拍名片」，系統會自動辨識姓名、公司與電話<br>資料只儲存在這支手機，不會上傳</div></div>`;
@@ -644,7 +665,7 @@ function render(){
     const co=shortCo(c.company);
     const sub=c.title||c.department||c.email||c.mobile||"";
     const tags=[c.category,c.event,...(c.tags||[])].filter(Boolean).slice(0,4).map(t=>`<span class="tag">${esc(t)}</span>`).join("");
-    return `<button class="card" data-id="${esc(c.id)}"><div class="thumb">${th}</div><div class="meta">
+    return `<button class="card${selectMode&&picked.has(c.id)?" picked":""}" data-id="${esc(c.id)}">${selectMode?`<span class="ck${picked.has(c.id)?" on":""}"></span>`:""}<div class="thumb">${th}</div><div class="meta">
       <div class="nm"><span class="nn">${esc(nm)}</span>${co?`<span class="co">${esc(co)}</span>`:""}${c.followUp?'<span class="star">★</span>':""}</div>
       <div class="sub">${esc(sub)}</div>
       <div class="tags">${c.needsReview?'<span class="tag warn">待確認</span>':""}${tags}</div></div></button>`;
@@ -656,7 +677,32 @@ $("#catFilter").onchange=e=>{ filt.cat=e.target.value; render(); };
 $("#eventFilter").onchange=e=>{ filt.event=e.target.value; render(); };
 $("#sort").onchange=e=>{ filt.sort=e.target.value; render(); };
 $("#q").oninput=e=>{ filt.q=e.target.value; render(); };
-$("#list").onclick=e=>{ const b=e.target.closest(".card"); if(b) showDetail(b.dataset.id); };
+$("#list").onclick=e=>{ const b=e.target.closest(".card"); if(!b) return; if(selectMode){ const id=b.dataset.id; picked.has(id)?picked.delete(id):picked.add(id); render(); return; } showDetail(b.dataset.id); };
+/* ---------- bulk select & delete ---------- */
+let selectMode=false; const picked=new Set();
+function setSelect(on){ selectMode=on; if(!on) picked.clear(); document.body.classList.toggle("selecting",on); $("#selToggle").textContent=on?"取消選取":"選取"; render(); }
+function updSel(){ const n=picked.size; $("#selInfo").textContent=`已選 ${n} 張`; $("#selDel").disabled=!n; const vis=filtered(); $("#selAll").textContent=(vis.length&&vis.every(c=>picked.has(c.id)))?"全不選":"全選"; }
+$("#selToggle").onclick=()=>setSelect(!selectMode);
+$("#selCancel").onclick=()=>setSelect(false);
+$("#selAll").onclick=()=>{ const vis=filtered(); const all=vis.length&&vis.every(c=>picked.has(c.id)); vis.forEach(c=>all?picked.delete(c.id):picked.add(c.id)); render(); };
+async function removeCard(c){
+  await store.remove(c);
+  try{ if(typeof assets!=="undefined" && assets) [c.hiFrontId,c.hiBackId].filter(Boolean).forEach(id=>assets.delete(id).catch(()=>{})); }catch(e){}
+}
+$("#selDel").onclick=async()=>{
+  const ids=[...picked].filter(id=>cards.has(id)); if(!ids.length) return;
+  if(!await confirmBox(`確定刪除這 ${ids.length} 張名片？刪除後無法復原。`,"刪除")) return;
+  const pg=$("#progress"); pg.classList.add("show"); let done=0, fail=0;
+  for(const id of ids){
+    $("#progText").textContent=`刪除中 ${done+1}/${ids.length}`; $("#progBar").style.width=(done/ids.length*100)+"%";
+    const c=cards.get(id); try{ if(c) await removeCard(c); picked.delete(id); }catch(e){ fail++; }
+    done++;
+  }
+  $("#progBar").style.width="100%"; setTimeout(()=>pg.classList.remove("show"),500);
+  toast(`已刪除 ${done-fail} 張${fail?`，${fail} 張失敗`:""}`);
+  setSelect(false);
+};
+
 
 /* ---------- images ---------- */
 async function loadImg(src){
