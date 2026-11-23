@@ -405,7 +405,7 @@ body.selecting .selbar{display:flex}
     <div class="sheet-h"><h2>新增名片</h2><button class="btn" data-close>關閉</button></div>
     <div class="menu">
       <button id="mOne"><b>📷 拍一張 / 選一張</b><span>拍照或選照片，自動辨識後可再修改</span></button>
-      <button id="mMany"><b>🗂 批次匯入多張</b><span>展覽回來一次選多張照片，每張變一張名片，之後再確認</span></button>
+      <button id="mMany"><b>🗂 批次匯入多張</b><span>一次選多張名片照片。已在名片庫裡的人（例如通訊錄匯入的）會自動比對，把照片補進原本那張；其他的新增後再確認</span></button>
       <button id="mManual"><b>✏️ 手動輸入</b><span>沒有照片時直接填寫</span></button>
       <button id="mVcf"><b>📇 匯入聯絡人檔案</b><span>Excel、CSV 或手機聯絡人（.vcf），可從名片全能王等 App 匯出</span></button>
     </div>
@@ -537,7 +537,7 @@ let viewing = null;
 
 /* ---------- toast / confirm ---------- */
 let tt;
-function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(tt); tt=setTimeout(()=>t.classList.remove("show"),2200); }
+function toast(msg,ms=2200){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(tt); tt=setTimeout(()=>t.classList.remove("show"),ms); }
 function confirmBox(msg, yes="確定"){
   return new Promise(res=>{
     $("#cMsg").textContent=msg; $("#cYes").textContent=yes;
@@ -1302,11 +1302,47 @@ $("#fileOne").onchange=async e=>{
   try{ const p=await prepFile(f); c.imgFront=p.thumb; openEditor(c,{isNew:true}); setHiBlob("front",p.hiBlob); editing.dirty.front=true; renderSlots(); runScan(); }
   catch(err){ toast(`無法讀取這張照片（${(err&&(err.name||err.message))||"未知錯誤"}）`); }
 };
+/* ---------- match a scanned card to an existing one ---------- */
+function _digits(s){ return String(s||"").replace(/\D/g,""); }
+function phoneKeys(c){ return [c.mobile,c.phone].filter(Boolean).join("/").split(/\s*\/\s*/).map(x=>{ const d=_digits(String(x).split(/#|ext|分機|轉/i)[0]); return d.length>=8?d.slice(-9):""; }).filter(Boolean); }
+function emailKeys(c){ return String(c.email||"").toLowerCase().split(/\s*[\/,;]\s*/).map(s=>s.trim()).filter(s=>s.includes("@")); }
+function coKey(s){ return String(s||"").split("/")[0].replace(/股份有限公司|有限公司|公司|株式会社|co\.?,?\s*ltd\.?|inc\.?|\s/ig,"").toLowerCase(); }
+function findMatch(c){
+  const em=emailKeys(c), mob=phoneKeys({mobile:c.mobile}), tel=phoneKeys({phone:c.phone});
+  const nm=(c.name||"").replace(/\s/g,""), en=(c.nameEn||"").toLowerCase().replace(/\s/g,""), co=coKey(c.company);
+  let best=null, score=0;
+  for(const x of cards.values()){
+    if(x.id===c.id) continue;
+    const xn=(x.name||"").replace(/\s/g,""), xe=(x.nameEn||"").toLowerCase().replace(/\s/g,"");
+    const emailHit=em.length && emailKeys(x).some(e=>em.includes(e));
+    const nameConflict=(nm.length>=2 && xn.length>=2 && nm!==xn) || (!nm && !xn && en.length>=3 && xe.length>=3 && en!==xe);
+    if(nameConflict && !emailHit) continue;          // different person, even if a phone number is shared
+    let s=0;
+    if(emailHit) s+=3;
+    const xAll=phoneKeys(x);
+    if(mob.length && xAll.some(p=>mob.includes(p))) s+=3;
+    if(tel.length && xAll.some(p=>tel.includes(p))) s+=1;   // office lines are often shared
+    if(nm.length>=2 && nm===xn) s+=2;
+    if(en.length>=3 && en===xe) s+=2;
+    const xc=coKey(x.company); if(co && xc && (co.includes(xc)||xc.includes(co))) s+=1;
+    if(s>score){ score=s; best=x; }
+  }
+  return score>=3?best:null;   // same email, same mobile, or same name + company/phone
+}
+function mergeInto(m,c,ev){
+  const v={...m,tags:[...(m.tags||[])]};
+  FIELDS.forEach(([k])=>{ if(!v[k] && c[k]) v[k]=c[k]; });
+  if(!v.category && c.category) v.category=c.category;
+  if(ev && !v.event) v.event=ev;
+  if(!v.tags.includes("照片比對")) v.tags.push("照片比對");
+  v.updatedAt=Date.now();
+  return v;
+}
 $("#fileMany").onchange=async e=>{
   const files=[...e.target.files]; if(!files.length) return; close("#addMenu");
   const ev=$("#batchEvent").value.trim();
   const pg=$("#progress"); pg.classList.add("show");
-  let done=0, fail=0, aiOff=false;
+  let done=0, fail=0, aiOff=false, matched=0, created=0, hadPhoto=0;
   for(const f of files){
     $("#progText").textContent=`辨識中 ${done+1}/${files.length}（每張約 5–15 秒）`; $("#progBar").style.width=(done/files.length*100)+"%";
     const c=blankCard(); if(ev) c.event=ev; c.needsReview=true;
@@ -1316,15 +1352,17 @@ $("#fileMany").onchange=async e=>{
         try{ const r=await extract([p.hiBlob]); applyExtract(c,r,true); }
         catch(err){ if(err && err.code==="no_ocr"){ aiOff=true; toast(aiErr(err)); } }
       }
-      await store.putImg(c.id,"front",p.hiBlob);
-      await store.save(c);
+      const m=findMatch(c);
+      if(m && !m.imgFront){ await store.putImg(m.id,"front",p.hiBlob); const v=mergeInto(m,c,ev); v.imgFront=p.thumb; await store.save(v); matched++; }
+      else if(m){ hadPhoto++; }
+      else { await store.putImg(c.id,"front",p.hiBlob); await store.save(c); created++; }
     }catch(err){ fail++; if(err && err.code==="quota_exceeded"){ toast("儲存空間已滿"); break; } }
     done++;
   }
   $("#progBar").style.width="100%";
   setTimeout(()=>pg.classList.remove("show"),600);
-  filt.chip="review"; render();
-  toast(`已匯入 ${done-fail} 張${fail?`，${fail} 張失敗`:""}，請逐一確認`);
+  filt.chip=created?"review":"all"; render();
+  toast(`完成：${matched} 張補進現有名片（標籤「照片比對」）、${created} 張新增待確認${hadPhoto?`、${hadPhoto} 張已有照片略過`:""}${fail?`、${fail} 張失敗`:""}`,6000);
 };
 
 /* ---------- files out ---------- */
