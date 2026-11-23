@@ -325,6 +325,8 @@ body{background:linear-gradient(180deg,#1d3a6b 0,#24467d 230px,var(--bg) 230px)}
 .empty .big::after{background:var(--gold);box-shadow:0 8px 0 rgba(255,255,255,.7),0 16px 0 rgba(255,255,255,.5)}
 .empty .t1{font-family:var(--serif);letter-spacing:.08em}
 .toast{background:#1d3a6b;color:#efe6d2;border:1px solid var(--gold);border-radius:4px}
+.vcfsteps{font-size:14px;line-height:1.7;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:6px 14px}
+.vcfsteps p{margin:8px 0}
 </style>
 </head>
 <body>
@@ -375,6 +377,7 @@ body{background:linear-gradient(180deg,#1d3a6b 0,#24467d 230px,var(--bg) 230px)}
 
 <input type="file" id="fileOne" accept="image/*" class="hidden">
 <input type="file" id="fileMany" accept="image/*" multiple class="hidden">
+<input type="file" id="fileVcf" accept=".vcf,.csv,.xlsx,.xls,text/vcard,text/x-vcard,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" class="hidden">
 
 <!-- add menu -->
 <div class="overlay" id="addMenu">
@@ -384,6 +387,7 @@ body{background:linear-gradient(180deg,#1d3a6b 0,#24467d 230px,var(--bg) 230px)}
       <button id="mOne"><b>📷 拍一張 / 選一張</b><span>拍照或選照片，自動辨識後可再修改</span></button>
       <button id="mMany"><b>🗂 批次匯入多張</b><span>展覽回來一次選多張照片，每張變一張名片，之後再確認</span></button>
       <button id="mManual"><b>✏️ 手動輸入</b><span>沒有照片時直接填寫</span></button>
+      <button id="mVcf"><b>📇 匯入聯絡人檔案</b><span>Excel、CSV 或手機聯絡人（.vcf），可從名片全能王等 App 匯出</span></button>
     </div>
     <div class="f" style="margin-top:14px">
       <label>批次匯入時套用的認識場合（選填）</label>
@@ -464,6 +468,21 @@ body{background:linear-gradient(180deg,#1d3a6b 0,#24467d 230px,var(--bg) 230px)}
 <input type="file" id="heroFiles" accept="image/*" multiple class="hidden">
 <input type="file" id="restoreFile" accept=".json,application/json" class="hidden">
 
+<!-- vcf import help -->
+<div class="overlay" id="vcfHelp">
+  <div class="sheet">
+    <div class="sheet-h"><h2>匯入聯絡人檔案</h2><button class="btn" data-close>關閉</button></div>
+    <div class="vcfsteps">
+      <p><b>支援三種檔案</b>：Excel（.xlsx / .xls）、CSV、vCard（.vcf）。已經在名片庫裡的人（Email 或手機相同）會自動略過。</p>
+      <p><b>從名片 App 匯出</b>（例如名片全能王）：在 App 裡選好名片 →「匯出」→ 選 Excel 或 vCard，存到手機後在這裡選擇該檔案。</p>
+      <p><b>iPhone 聯絡人</b>：「聯絡人」App → 左上角「列表」→ 長按「所有聯絡人」→「匯出」→「儲存到檔案」。</p>
+      <p><b>Android 聯絡人</b>：「聯絡人」App →「設定／管理聯絡人」→「匯出」→ 存成 .vcf。</p>
+      <p><b>自己整理的 Excel</b>：第一列放欄位名稱即可，例如「姓名、公司、職稱、手機、電話、Email、地址、備註」，名稱不用完全一樣，系統會自動對應。</p>
+    </div>
+    <div class="actions"><span></span><button class="btn primary" id="vcfPick" type="button">選擇檔案</button></div>
+    <button class="btn hidden" id="vcfContacts" type="button" style="width:100%;margin-top:10px">或直接從通訊錄挑選（Android）</button>
+  </div>
+</div>
 <datalist id="eventList"></datalist>
 <datalist id="companyList"></datalist>
 <div class="toast" id="toast"></div>
@@ -1033,6 +1052,202 @@ async function copy(t){ try{ await navigator.clipboard.writeText(t); toast("已�
 $("#addBtn").onclick=()=>open("#addMenu");
 $("#manualBtn").onclick=()=>openEditor(blankCard(),{isNew:true});
 $("#mManual").onclick=()=>{ close("#addMenu"); openEditor(blankCard(),{isNew:true}); };
+/* ---------- import Excel / CSV ---------- */
+const XLSX_SRC="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+function loadXlsx(){ if(window.XLSX) return Promise.resolve(); return new Promise((res,rej)=>{ const el=document.createElement("script"); el.src=XLSX_SRC; el.onload=res; el.onerror=()=>rej(new Error("xlsx")); document.head.appendChild(el); }); }
+function decodeText(buf){
+  try{ return new TextDecoder("utf-8",{fatal:true}).decode(buf); }catch(e){}
+  try{ return new TextDecoder("big5").decode(buf); }catch(e){}
+  return new TextDecoder("utf-8").decode(buf);
+}
+function parseCsv(text){
+  text=text.replace(/^﻿/,"");
+  const first=text.split(/\r?\n/,1)[0]||"";
+  const delim=(first.split("\t").length>first.split(",").length)?"\t":(first.split(";").length>first.split(",").length?";":",");
+  const rows=[]; let row=[], f="", q=false;
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    if(q){ if(ch==='"'){ if(text[i+1]==='"'){ f+='"'; i++; } else q=false; } else f+=ch; }
+    else if(ch==='"') q=true;
+    else if(ch===delim){ row.push(f); f=""; }
+    else if(ch==="\n"||ch==="\r"){ if(ch==="\r"&&text[i+1]==="\n") i++; row.push(f); rows.push(row); row=[]; f=""; }
+    else f+=ch;
+  }
+  if(f!==""||row.length){ row.push(f); rows.push(row); }
+  return rows.filter(r=>r.some(c=>String(c).trim()));
+}
+const COL_RULES=[
+  ["skip",/-type$|^type$|^label$|^標記$|mail.*displayname|displayname.*mail/],
+  ["nameEn",/(英文姓名|英文名|englishname|nameen)/],
+  ["followUp",/(待聯絡|followup|追蹤)/],
+  ["fax",/(傳真|传真|fax)/],
+  ["mobile",/(手機|手机|行動|mobile|cell|iphone)/],
+  ["email",/(email|e-mail|mail|電子郵件|郵件|信箱|郵箱|邮箱|邮件)/],
+  ["website",/(網站|網址|网址|网站|website|homepage|url|web)/],
+  ["address",/(地址|住址|address|street|city|state|postal|zip|country|郵遞區號|縣市|鄉鎮|區域|國家)/],
+  ["lineId",/(line|wechat|微信|社群|instagram|facebook)/],
+  ["phone",/(電話|电话|市話|phone|tel|分機)/],
+  ["department",/(部門|部门|department|dept)/],
+  ["title",/(職稱|職位|职位|职称|頭銜|職務|职务|jobtitle|title|position)/],
+  ["company",/(公司|機構|單位|組織|company|organization|organisation|employer)/],
+  ["lastName",/^(姓|姓氏|lastname|familyname|surname)$/],
+  ["firstName",/^(名|名字|firstname|givenname)$/],
+  ["name",/(姓名|名稱|全名|聯絡人|^name$|fullname|displayname)/],
+  ["category",/(分類|類別|群組|category|group|labels?)/],
+  ["event",/(認識場合|場合|活動|展覽|event)/],
+  ["metDate",/(認識日期|日期|date|建立時間|建立日期)/],
+  ["tags",/(標籤|tag)/],
+  ["notes",/(備註|备注|附註|說明|note|memo|remark|comment)/],
+];
+function normHead(h){ return String(h||"").toLowerCase().replace(/[\s_.:：()（）\[\]]/g,"").replace(/\d+-value$/,"").replace(/\d+$/,""); }
+function mapHeader(h){ const n=normHead(h); if(!n) return null; for(const [k,re] of COL_RULES) if(re.test(n)) return k; return null; }
+function xlDate(v){
+  if(v==null||v==="") return "";
+  if(typeof v==="number" && v>20000 && v<80000){ const d=new Date(Math.round((v-25569)*86400000)); return d.toISOString().slice(0,10); }
+  const m=String(v).match(/(\d{4})[\/\-.年](\d{1,2})[\/\-.月](\d{1,2})/); if(m) return `${m[1]}-${m[2].padStart(2,"0")}-${m[3].padStart(2,"0")}`;
+  return "";
+}
+function rowsToCards(rows){
+  let hi=-1, map=null;
+  for(let i=0;i<Math.min(rows.length,8);i++){
+    const m=rows[i].map(mapHeader); const hits=m.filter(x=>x&&x!=="skip").length;
+    if(hits>=2 && m.some(x=>["name","firstName","lastName","company","email","mobile","phone","nameEn"].includes(x))){ hi=i; map=m; break; }
+  }
+  if(hi<0) return null;
+  const heads=rows[hi].map(h=>String(h||""));
+  if(heads.some((h,i)=>map[i]==="address" && /formatted/i.test(h))) map=map.map((k,i)=>k==="address" && !/formatted/i.test(heads[i])?"skip":k);
+  const out=[];
+  for(const r of rows.slice(hi+1)){
+    const c=blankCard(); c.metDate=""; c.tags=["檔案匯入"];
+    const acc={}; const push=(k,v)=>{ v=String(v??"").trim(); if(!v) return; (acc[k]=acc[k]||[]).push(v); };
+    map.forEach((k,ci)=>{
+      if(!k||k==="skip") return; let v=r[ci]; if(v==null||String(v).trim()==="") return;
+      if(k==="phone"||k==="mobile"){
+        const tHead=/value\s*$/i.test(heads[ci])?heads[ci].replace(/value\s*$/i,"type").toLowerCase():null;
+        const typeIdx=tHead?heads.findIndex(h=>h.toLowerCase()===tHead):-1;
+        const t=typeIdx>=0?String(r[typeIdx]||""):"";
+        if(/mobile|cell|手機/i.test(t)) k="mobile"; else if(/fax|傳真/i.test(t)) k="fax";
+      }
+      if(k==="metDate"){ const d=xlDate(v); if(d) acc.metDate=[d]; return; }
+      push(k,v);
+    });
+    const j=(k,sep=" / ")=>[...new Set(acc[k]||[])].join(sep);
+    c.name=j("name"," "); if(!c.name && (acc.lastName||acc.firstName)){ const ln=j("lastName",""), fn=j("firstName",""); c.name=/[㐀-鿿]/.test(ln+fn)?ln+fn:[fn,ln].filter(Boolean).join(" "); }
+    if(c.name && !/[㐀-鿿]/.test(c.name) && !j("nameEn")){ c.nameEn=c.name; c.name=""; } else c.nameEn=j("nameEn");
+    ["company","department","title","mobile","phone","fax","email","website","lineId","event"].forEach(k=>{ c[k]=j(k, k==="company"||k==="department"||k==="title"||k==="event"?" ":" / "); });
+    c.address=j("address"," ");
+    c.notes=j("notes","\n");
+    const cat=(acc.category||[]).join(",").split(/:::|[,;，、]/).map(x=>x.replace(/^\*\s*/,"").trim()).filter(x=>x&&!/^(mycontacts|starred)$/i.test(x))[0]; if(cat) c.category=cat;
+    const tg=(acc.tags||[]).join(",").split(/[,;，、]/).map(s=>s.trim()).filter(Boolean); c.tags=[...new Set(["檔案匯入",...tg])];
+    if(acc.metDate) c.metDate=acc.metDate[0];
+    if(acc.followUp) c.followUp=/^(是|y|yes|true|1|v|✓|★)$/i.test(acc.followUp[0]);
+    if(c.website) c.website=c.website.replace(/^https?:\/\//i,"");
+    out.push(c);
+  }
+  return out;
+}
+async function importTableFile(f){
+  const name=(f.name||"").toLowerCase();
+  let rows;
+  try{
+    if(/\.(xlsx|xls|xlsm)$/.test(name)){
+      toast("讀取 Excel 中…"); await loadXlsx();
+      const wb=XLSX.read(await f.arrayBuffer(),{type:"array",cellDates:false});
+      rows=[]; for(const sn of wb.SheetNames){ const rs=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,raw:true,defval:""}); const cards=rowsToCards(rs); if(cards&&cards.length){ rows=rs; break; } if(!rows.length) rows=rs; }
+    } else rows=parseCsv(decodeText(await f.arrayBuffer()));
+  }catch(e){ toast(e&&e.message==="xlsx"?"Excel 讀取工具載入失敗，請確認網路，或改存成 CSV 再試":"無法讀取這個檔案"); return; }
+  const list=rowsToCards(rows);
+  if(!list){ toast("找不到欄位名稱：第一列請放「姓名、公司、手機」等標題"); return; }
+  await importContactCards(list,"檔案匯入");
+}
+/* ---------- import phone contacts (.vcf) ---------- */
+function vcfUnfold(txt){ return String(txt).replace(/\r\n/g,"\n").replace(/\r/g,"\n").replace(/=\n/g,"=").replace(/\n[ \t]/g,"").split("\n"); }
+function qpDecode(v){
+  const bytes=[]; v=v.replace(//g,"");
+  for(let i=0;i<v.length;i++){ if(v[i]==="="&&/^[0-9A-F]{2}$/i.test(v.substr(i+1,2))){ bytes.push(parseInt(v.substr(i+1,2),16)); i+=2; } else { const b=new TextEncoder().encode(v[i]); b.forEach(x=>bytes.push(x)); } }
+  try{ return new TextDecoder("utf-8").decode(new Uint8Array(bytes)); }catch(e){ return v; }
+}
+function vUnesc(v){ return String(v).replace(/\\n/gi,"\n").replace(/\\([,;\\])/g,"$1").trim(); }
+function vSplit(v){ const out=[]; let cur=""; for(let i=0;i<v.length;i++){ if(v[i]==="\\"&&i+1<v.length){ cur+=v[i]+v[i+1]; i++; } else if(v[i]===";"){ out.push(cur); cur=""; } else cur+=v[i]; } out.push(cur); return out.map(vUnesc); }
+function parseVcf(txt){
+  const lines=vcfUnfold(txt); const out=[]; let cur=null;
+  for(let raw of lines){
+    if(!raw.trim()) continue;
+    if(/^BEGIN:VCARD/i.test(raw)){ cur={tel:[],email:[],adr:[],url:[]}; continue; }
+    if(/^END:VCARD/i.test(raw)){ if(cur) out.push(cur); cur=null; continue; }
+    if(!cur) continue;
+    const ci=raw.indexOf(":"); if(ci<0) continue;
+    let head=raw.slice(0,ci), val=raw.slice(ci+1);
+    const parts=head.split(";"); let name=parts[0].replace(/^[^.]+\./,"").toUpperCase(); const params=parts.slice(1).join(";").toUpperCase();
+    if(/ENCODING=QUOTED-PRINTABLE|QUOTED-PRINTABLE/.test(params)) val=qpDecode(val); else val=val.replace(//g,"");
+    if(name==="FN") cur.fn=vUnesc(val);
+    else if(name==="N") cur.n=vSplit(val);
+    else if(name==="ORG") cur.org=vSplit(val);
+    else if(name==="TITLE") cur.title=vUnesc(val);
+    else if(name==="NOTE") cur.note=vUnesc(val);
+    else if(name==="TEL") cur.tel.push({v:vUnesc(val).replace(/^tel:/i,""),p:params});
+    else if(name==="EMAIL") cur.email.push(vUnesc(val));
+    else if(name==="ADR") cur.adr.push(vSplit(val));
+    else if(name==="URL") cur.url.push(vUnesc(val));
+    else if(name==="BDAY") cur.bday=vUnesc(val);
+  }
+  return out;
+}
+function vcardToCard(v){
+  const c=blankCard(); c.metDate=""; c.tags=["通訊錄匯入"];
+  const hasCJK=s=>/[㐀-鿿]/.test(s||"");
+  let name=v.fn||"";
+  if(!name && v.n){ const [last,first]=v.n; name=hasCJK(last+first)?(last||"")+(first||""):[first,last].filter(Boolean).join(" "); }
+  if(hasCJK(name)) c.name=name.replace(/\s+/g,""); else { c.nameEn=name; }
+  if(v.org){ c.company=v.org[0]||""; c.department=v.org.slice(1).filter(Boolean).join(" "); }
+  c.title=v.title||"";
+  const mob=[], ph=[], fax=[];
+  v.tel.forEach(t=>{ const num=t.v.trim(); if(!num) return; if(/FAX/.test(t.p)) fax.push(num); else if(/CELL|MOBILE|IPHONE/.test(t.p) || /^(\+?886[\s-]?9|09)/.test(num.replace(/[()\s]/g,""))) mob.push(num); else ph.push(num); });
+  c.mobile=[...new Set(mob)].join(" / "); c.phone=[...new Set(ph)].join(" / "); c.fax=[...new Set(fax)].join(" / ");
+  c.email=[...new Set(v.email.map(e=>e.trim()).filter(Boolean))].join(" / ");
+  c.website=(v.url[0]||"").replace(/^https?:\/\//i,"");
+  const a=v.adr[0];
+  if(a){ const [,ext,street,city,region,postal,country]=a; const cf=/[市縣]$/.test(city||"")&&!/[市縣]$/.test(region||""); c.address=hasCJK(a.join(""))?[postal,country&&!/台灣|臺灣|taiwan/i.test(country)?country:"",cf?city:region,cf?region:city,street,ext].filter(Boolean).join(""):[ext,street,city,[region,postal].filter(Boolean).join(" "),country].filter(Boolean).join(", "); }
+  c.notes=[v.note,v.bday?"生日："+v.bday:""].filter(Boolean).join("\n");
+  return c;
+}
+async function importContactCards(list,tagName="通訊錄匯入"){
+  const all=list.filter(c=>c.name||c.nameEn||c.company||c.email||c.mobile||c.phone);
+  if(!all.length){ toast("檔案裡沒有找到聯絡人"); return; }
+  const fresh=all.filter(c=>!dupsOf(c).length);
+  const skip=all.length-fresh.length;
+  if(!fresh.length){ toast(`這 ${all.length} 位聯絡人都已經在名片庫裡了`); return; }
+  if(!await confirmBox(`找到 ${all.length} 位聯絡人${skip?`，其中 ${skip} 位已經在名片庫裡會略過`:""}。要匯入 ${fresh.length} 位嗎？`,"匯入")) return;
+  const pg=$("#progress"); pg.classList.add("show");
+  let done=0, fail=0;
+  for(const c of fresh){
+    $("#progText").textContent=`匯入中 ${done+1}/${fresh.length}`; $("#progBar").style.width=(done/fresh.length*100)+"%";
+    c.createdAt=Date.now()-done; c.updatedAt=Date.now();
+    try{ await store.save(c); }catch(e){ fail++; if(e&&e.code==="quota_exceeded"){ toast("儲存空間已滿"); break; } }
+    done++;
+  }
+  $("#progBar").style.width="100%"; setTimeout(()=>pg.classList.remove("show"),600);
+  filt.q=""; $("#q").value=""; render();
+  toast(`已匯入 ${done-fail} 位聯絡人${fail?`，${fail} 位失敗`:""}，標籤為「${tagName}」`);
+}
+$("#mVcf").onclick=()=>{ close("#addMenu"); $("#vcfContacts").classList.toggle("hidden",!(navigator.contacts&&navigator.contacts.select)); open("#vcfHelp"); };
+$("#vcfPick").onclick=()=>{ $("#fileVcf").value=""; $("#fileVcf").click(); };
+$("#fileVcf").onchange=async e=>{
+  const f=e.target.files[0]; if(!f) return; close("#vcfHelp");
+  if(/\.(csv|tsv|txt|xlsx|xls|xlsm)$/i.test(f.name||"")){ await importTableFile(f); return; }
+  let txt=""; try{ txt=decodeText(await f.arrayBuffer()); }catch(err){ toast("無法讀取這個檔案"); return; }
+  if(!/BEGIN:VCARD/i.test(txt)){ await importTableFile(new File([txt],"x.csv")); return; }
+  if(!/BEGIN:VCARD/i.test(txt)){ toast("這個 .vcf 檔裡沒有聯絡人"); return; }
+  await importContactCards(parseVcf(txt).map(vcardToCard));
+};
+$("#vcfContacts").onclick=async()=>{
+  try{
+    const res=await navigator.contacts.select(["name","email","tel"],{multiple:true});
+    close("#vcfHelp");
+    await importContactCards((res||[]).map(r=>vcardToCard({fn:(r.name||[])[0]||"",tel:(r.tel||[]).map(v=>({v,p:""})),email:r.email||[],adr:[],url:[]})));
+  }catch(e){ if(e&&e.name!=="AbortError") toast("無法開啟通訊錄"); }
+};
+
 $("#mOne").onclick=()=>{ $("#fileOne").value=""; $("#fileOne").click(); };
 $("#mMany").onclick=()=>{ $("#fileMany").value=""; $("#fileMany").click(); };
 $("#fileOne").onchange=async e=>{
